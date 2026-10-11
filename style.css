@@ -26,7 +26,8 @@ body { background: var(--paper); color: var(--ink); }
 }
 
 .brand {
-  flex: 1;
+  flex: 1 1 50%;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -38,10 +39,11 @@ body { background: var(--paper); color: var(--ink); }
 
 .brand h1 { font-size: 4rem; font-weight: 800; letter-spacing: -1px; }
 .brand p  { margin-top: 10px; font-size: 1.15rem; font-weight: 500; }
-.brand svg { margin-top: 56px; width: 230px; opacity: 0.85; }
+.brand svg { margin-top: 56px; width: 230px; height: 177px; opacity: 0.85; flex-shrink: 0; }
 
 .form-side {
-  flex: 1;
+  flex: 1 1 50%;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -177,4 +179,10 @@ input:focus {
 @media (max-width: 860px) {
   .split { flex-direction: column; }
 
-  .brand { padding: 
+  .brand { padding: 56px 24px 40px; }
+  .brand h1 { font-size: 2.6rem; }
+  .brand p  { font-size: 1rem; }
+  .brand svg { width: 150px; height: 116px; margin-top: 28px; }
+
+  .form-side { padding: 40px 20px 56px; }
+}
