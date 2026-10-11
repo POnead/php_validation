@@ -1,59 +1,40 @@
 <?php
-/**
- * register.php — Registration page with PHP server-side validation using Regular Expressions.
- * Satisfies the "Form Validation Using Regular Expressions" rubric item.
- */
-require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/functions.php';
+include 'config.php';
+include 'functions.php';
 
-$errors  = [];
+$errors = '';
 $success = '';
-$old     = ['name' => '', 'email' => ''];
+$name  = '';
+$email = '';
 
 if (isPost()) {
-    $name     = post('name');
-    $email    = post('email');
-    $password = post('password');
-    $confirm  = post('confirm');
+    $name     = trim($_POST['name'] ?? '');
+    $email    = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
+    $confirm  = $_POST['confirm'] ?? '';
 
-    $old['name']  = $name;
-    $old['email'] = $email;
-
-    // --- PHP REGEX VALIDATION ---
+    // Regex validation
     if ($name === '') {
-        $errors['name'] = 'Full name is required.';
+        $errors = 'Full name is required.';
     } elseif (!validateName($name)) {
-        $errors['name'] = 'Name must be 2–50 characters (letters, spaces, . \' - only).';
-    }
-
-    if ($email === '') {
-        $errors['email'] = 'Email address is required.';
+        $errors = "Name must be 2-50 characters (letters, spaces, . ' - only).";
+    } elseif ($email === '') {
+        $errors = 'Email address is required.';
     } elseif (!validateEmail($email)) {
-        $errors['email'] = 'Please enter a valid email address (e.g. name@domain.com).';
-    }
-
-    if ($password === '') {
-        $errors['password'] = 'Password is required.';
+        $errors = 'Please enter a valid email address (e.g. name@domain.com).';
+    } elseif ($password === '') {
+        $errors = 'Password is required.';
     } elseif (!validatePassword($password)) {
-        $errors['password'] = 'Password must be 8+ characters and include at least 1 special character (! @ # $ % & *).';
-    }
-
-    if ($confirm === '') {
-        $errors['confirm'] = 'Please confirm your password.';
+        $errors = 'Password must be 8+ characters and include at least 1 special character (! @ # $ % & *).';
+    } elseif ($confirm === '') {
+        $errors = 'Please confirm your password.';
     } elseif ($confirm !== $password) {
-        $errors['confirm'] = 'Passwords do not match.';
-    }
-
-    // --- SUCCESS ---
-    if (empty($errors)) {
-        // In a real app you would insert into a database here.
-        // For this demo we simply store the new user in the session.
-        $_SESSION['registered_user'] = [
-            'name'  => $name,
-            'email' => $email,
-        ];
+        $errors = 'Passwords do not match.';
+    } else {
+        $_SESSION['registered_user'] = ['name' => $name, 'email' => $email];
         $success = 'Registration successful! You may now <a href="login.php">log in</a>.';
-        $old = ['name' => '', 'email' => ''];
+        $name = '';
+        $email = '';
     }
 }
 ?>
@@ -97,44 +78,36 @@ if (isPost()) {
       <form class="card" id="registerForm" action="register.php" method="post" novalidate>
         <h2>Create Account</h2>
 
-        <?php if ($success): ?>
+        <?php if ($errors !== ''): ?>
+          <div class="alert-error"><?= e($errors) ?></div>
+        <?php endif; ?>
+
+        <?php if ($success !== ''): ?>
           <div class="alert-success"><?= $success ?></div>
         <?php endif; ?>
 
-        <div class="field <?= isset($errors['name']) ? 'invalid' : '' ?>">
+        <div class="field">
           <input type="text" id="name" name="name" placeholder="Full Name"
-                 autocomplete="name" value="<?= e($old['name']) ?>">
-          <?php if (!empty($errors['name'])): ?>
-            <label class="error-msg"><?= e($errors['name']) ?></label>
-          <?php endif; ?>
+                 autocomplete="name" value="<?= e($name) ?>">
         </div>
 
-        <div class="field <?= isset($errors['email']) ? 'invalid' : '' ?>">
+        <div class="field">
           <input type="email" id="email" name="email" placeholder="Email Address"
-                 autocomplete="email" value="<?= e($old['email']) ?>">
-          <?php if (!empty($errors['email'])): ?>
-            <label class="error-msg"><?= e($errors['email']) ?></label>
-          <?php endif; ?>
+                 autocomplete="email" value="<?= e($email) ?>">
         </div>
 
-        <div class="field <?= isset($errors['password']) ? 'invalid' : '' ?>">
+        <div class="field">
           <input type="password" id="password" name="password" placeholder="Password"
                  autocomplete="new-password">
           <ul class="hint" id="passwordHint">
             <li id="hintLength">At least 8 characters</li>
             <li id="hintSpecial">At least 1 special character (! @ # $ % &amp; *)</li>
           </ul>
-          <?php if (!empty($errors['password'])): ?>
-            <label class="error-msg"><?= e($errors['password']) ?></label>
-          <?php endif; ?>
         </div>
 
-        <div class="field <?= isset($errors['confirm']) ? 'invalid' : '' ?>">
+        <div class="field">
           <input type="password" id="confirm" name="confirm" placeholder="Confirm Password"
                  autocomplete="new-password">
-          <?php if (!empty($errors['confirm'])): ?>
-            <label class="error-msg"><?= e($errors['confirm']) ?></label>
-          <?php endif; ?>
         </div>
 
         <button class="btn" type="submit">Register</button>
@@ -146,7 +119,7 @@ if (isPost()) {
   </main>
 
   <script>
-    // Progressive enhancement only — the real validation is done in PHP.
+    // Progressive enhancement only — real validation is done in PHP
     const SPECIAL_CHARS = /[!@#$%^&*()_+\-=\[\]{};':",.<>/?`~\\]/;
 
     function checkPasswordHint() {

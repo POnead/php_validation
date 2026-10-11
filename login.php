@@ -1,58 +1,37 @@
 <?php
-/**
- * login.php — Login page with PHP server-side validation using Regular Expressions.
- * Satisfies the "Form Validation Using Regular Expressions" rubric item.
- */
-require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/functions.php';
+include 'config.php';
+include 'functions.php';
 
-$errors   = [];
-$success  = '';
-$email    = '';
-$password = '';
+$errors = '';
+$email = '';
 
-// Initialise attempt counter
-if (!isset($_SESSION['login_attempts'])) {
-    $_SESSION['login_attempts'] = 0;
-}
-
-// If already logged in, redirect to landing page
-if (!empty($_SESSION['user'])) {
-    header('Location: index.php');
-    exit;
+if ($_SESSION['login_attempts'] ?? 0 >= MAX_LOGIN_ATTEMPTS) {
+    // locked out
 }
 
 if (isPost()) {
-    $email    = post('email');
-    $password = post('password');
+    $email    = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
 
-    // --- PHP REGEX VALIDATION ---
+    // Regex validation
     if ($email === '') {
-        $errors['email'] = 'Email address is required.';
+        $errors = 'Email address is required.';
     } elseif (!validateEmail($email)) {
-        $errors['email'] = 'Please enter a valid email address (e.g. name@domain.com).';
-    }
-
-    if ($password === '') {
-        $errors['password'] = 'Password is required.';
+        $errors = 'Please enter a valid email address (e.g. name@domain.com).';
+    } elseif ($password === '') {
+        $errors = 'Password is required.';
     } elseif (strlen($password) < 8) {
-        $errors['password'] = 'Password must be at least 8 characters.';
-    }
-
-    // --- CREDENTIAL CHECK ---
-    if (empty($errors)) {
-        if ($_SESSION['login_attempts'] >= MAX_LOGIN_ATTEMPTS) {
-            $errors['general'] = 'No attempts left. Please restart the page.';
+        $errors = 'Password must be at least 8 characters.';
+    } else {
+        // Credential check
+        if (($_SESSION['login_attempts'] ?? 0) >= MAX_LOGIN_ATTEMPTS) {
+            $errors = 'No attempts left. Please refresh the page.';
         } elseif (strcasecmp($email, DEMO_EMAIL) !== 0 || $password !== DEMO_PASSWORD) {
-            $_SESSION['login_attempts']++;
-            $remaining = MAX_LOGIN_ATTEMPTS - $_SESSION['login_attempts'];
-            $errors['general'] = 'Email or password is incorrect. Attempts left: ' . max(0, $remaining);
+            $_SESSION['login_attempts'] = ($_SESSION['login_attempts'] ?? 0) + 1;
+            $left = MAX_LOGIN_ATTEMPTS - $_SESSION['login_attempts'];
+            $errors = 'Email or password is incorrect. Attempts left: ' . max(0, $left);
         } else {
-            // Success
-            $_SESSION['user'] = [
-                'name'  => 'Demo User',
-                'email' => $email,
-            ];
+            $_SESSION['user'] = ['email' => $email];
             $_SESSION['login_attempts'] = 0;
             header('Location: index.php');
             exit;
@@ -60,10 +39,8 @@ if (isPost()) {
     }
 }
 
-$attemptsLeft = MAX_LOGIN_ATTEMPTS - (int) $_SESSION['login_attempts'];
-if ($attemptsLeft < 0) {
-    $attemptsLeft = 0;
-}
+$attemptsLeft = MAX_LOGIN_ATTEMPTS - ($_SESSION['login_attempts'] ?? 0);
+if ($attemptsLeft < 0) $attemptsLeft = 0;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -105,8 +82,8 @@ if ($attemptsLeft < 0) {
       <form class="card" id="loginForm" action="login.php" method="post" novalidate>
         <h2>Welcome Back</h2>
 
-        <?php if (!empty($errors['general'])): ?>
-          <div class="alert-error"><?= e($errors['general']) ?></div>
+        <?php if ($errors !== ''): ?>
+          <div class="alert-error"><?= e($errors) ?></div>
         <?php endif; ?>
 
         <div class="demo-box">
@@ -115,20 +92,14 @@ if ($attemptsLeft < 0) {
           <p><span>Password:</span> Coffee#2026</p>
         </div>
 
-        <div class="field <?= isset($errors['email']) ? 'invalid' : '' ?>">
+        <div class="field">
           <input type="email" id="email" name="email" placeholder="Email Address"
                  autocomplete="email" value="<?= e($email) ?>">
-          <?php if (!empty($errors['email'])): ?>
-            <label class="error-msg"><?= e($errors['email']) ?></label>
-          <?php endif; ?>
         </div>
 
-        <div class="field <?= isset($errors['password']) ? 'invalid' : '' ?>">
+        <div class="field">
           <input type="password" id="password" name="password" placeholder="Password"
                  autocomplete="current-password">
-          <?php if (!empty($errors['password'])): ?>
-            <label class="error-msg"><?= e($errors['password']) ?></label>
-          <?php endif; ?>
         </div>
 
         <p class="attempts-msg <?= $attemptsLeft <= 1 ? 'low' : '' ?>">
